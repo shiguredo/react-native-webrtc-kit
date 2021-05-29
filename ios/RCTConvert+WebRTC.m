@@ -248,6 +248,90 @@ NS_ASSUME_NONNULL_BEGIN
     return buffer;
 }
 
++ (nullable RTCRtpEncodingParameters *)RTCRtpEncodingParameters:(nullable id)json {
+    AssertNullable(@"RTCRtpEncodingParameters.active", NSNumber, json[@"active"]);
+    AssertNullable(@"RTCRtpEncodingParameters.rid", NSString, json[@"rid"]);
+    AssertNullable(@"RTCRtpEncodingParameters.scaleResolutionDownBy", NSNumber, json[@"scaleResolutionDownBy"]);
+    AssertNullable(@"RTCRtpEncodingParameters.maxBitrate", NSNumber, json[@"maxBitrate"]);
+    AssertNullable(@"RTCRtpEncodingParameters.maxFramerate", NSNumber, json[@"maxFramerate"]);
+    RTCRtpEncodingParameters *params = [[RTCRtpEncodingParameters alloc] init];
+    if (json[@"active"]) {
+        params.isActive = [RCTConvert BOOL:json[@"active"]];
+    }
+    NSString *rid = Nullable(json[@"rid"]);
+    if (rid) {
+        params.rid = rid;
+    }
+    NSNumber *scaleResolutionDownBy = Nullable(json[@"scaleResolutionDownBy"]);
+    if (scaleResolutionDownBy) {
+        params.scaleResolutionDownBy = scaleResolutionDownBy;
+    }
+    NSNumber *maxBitrate = Nullable(json[@"maxBitrate"]);
+    if (maxBitrate) {
+        params.maxBitrateBps = maxBitrate;
+    }
+    NSNumber *maxFramerate = Nullable(json[@"maxFramerate"]);
+    if (maxFramerate) {
+        params.maxFramerate = maxFramerate;
+    }
+    return params;
+}
+
++ (nullable RTCRtpTransceiverInit *)RTCRtpTransceiverInit:(nullable id)json {
+    AssertNullable(@"RTCRtpTransceiver.streamIds", NSArray, json[@"streamIds"]);
+    AssertNullable(@"RTCRtpTransceiver.direction", NSString, json[@"direction"]);
+    AssertNullable(@"RTCRtpTransceiver.sendEncodings", NSArray, json[@"sendEncodings"]);
+    RTCRtpTransceiverInit *init = [[RTCRtpTransceiverInit alloc] init];
+    if (json[@"streamIds"]) {
+        NSArray<NSString *> *streamIds = [RCTConvert NSArray: json[@"streamIds"]];
+        for (NSString *streamId in streamIds) {
+            // streamId 自体は non-null であるべき
+            AssertNonNull(@"each RTCRtpTransceiverInit.streamId", NSString, streamId);
+        }
+        init.streamIds = streamIds;
+    }
+    NSString *direction = Nullable(json[@"direction"]);
+    if (direction) {
+        if ([direction isEqualToString: @"sendonly"]) {
+            init.direction = RTCRtpTransceiverDirectionSendOnly;
+        }
+        else if ([direction isEqualToString: @"recvonly"]) {
+            init.direction = RTCRtpTransceiverDirectionRecvOnly;
+        }
+        else if ([direction isEqualToString: @"sendrecv"]) {
+            init.direction = RTCRtpTransceiverDirectionSendRecv;
+        }
+        else if ([direction isEqualToString: @"inactive"]) {
+            init.direction = RTCRtpTransceiverDirectionInactive;
+        }
+        else {
+            // direction が不正な値の場合 nil を返す
+            InvalidValueError(@"RTCRTPTransceiverInit.direction", direction);
+            return nil;
+        }
+    }
+    id sendEncodingsJson = Nullable(json[@"sendEncodings"]);
+    if (sendEncodingsJson) {
+        NSMutableArray<RTCRtpEncodingParameters *> *sendEncodings = [NSMutableArray new];
+        for (id sendEncodingsObject in sendEncodingsJson) {
+            NSLog(@"object => %@", sendEncodingsObject);
+            RTCRtpEncodingParameters *convert = [RCTConvert RTCRtpEncodingParameters: sendEncodingsObject];
+            if (convert == nil) {
+                NonNullError(@"each RTCRtpEncodingParameters");
+            } else {
+                [sendEncodings addObject: convert];
+            }
+        }
+        init.sendEncodings = [sendEncodings copy];
+        NSLog(@"transceiver init, init.sendEncodings=>, %@", init.sendEncodings);
+        NSLog(@"transceiver init, sendEncodings=>, %@", init.sendEncodings);
+        NSLog(@"transceiver init, [sendEncodings copy]=>, %@", [sendEncodings copy]);
+
+    }
+    NSLog(@"transceiver init, sendEncodings=>, %@", init.sendEncodings);
+    return init;
+}
+
 @end
 
 NS_ASSUME_NONNULL_END

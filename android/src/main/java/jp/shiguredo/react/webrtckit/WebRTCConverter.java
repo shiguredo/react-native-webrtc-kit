@@ -348,7 +348,64 @@ final class WebRTCConverter {
 
     //endregion
 
+    // region RtpParameters.Encoding
+    @NonNull
+    static RtpParameters.Encoding sendEncoding(@NonNull final ReadableMap json) {
+        String rid = null;
+        Boolean active = true;
+        Double scaleResolutionDownBy = null;
+        Double maxFramerate = null;
+        // TODO(kdxu): maxBitrate / maxFramerate の変換処理を実装する
+        if (json.hasKey("rid")) {
+            rid = json.getString("rid");
+        }
+        if (json.hasKey("active")) {
+            active = json.getBoolean("active");
+        }
+        if (json.hasKey("scaleResolutionDownBy")) {
+            scaleResolutionDownBy = json.getDouble("scaleResolutionDownBy");
+        }
+        final RtpParameters.Encoding encoding = new RtpParameters.Encoding(rid, active, scaleResolutionDownBy);
+        return encoding;
+    }
+    //endregion
 
+    // region RtpTransceiver.RtpTransceiverInit
+    @NonNull
+    static RtpTransceiver.RtpTransceiverInit rtpTransceiverInit(@Nullable final ReadableMap json) {
+        if (json != null) {
+            RtpTransceiver.RtpTransceiverDirection direction = RtpTransceiver.RtpTransceiverDirection.SEND_RECV;
+            final List<String> streamIds = new ArrayList<>();
+            final List<RtpParameters.Encoding> sendEncodings = new ArrayList<>();
+            if (json.hasKey("direction")) {
+                direction = rtpTransceiverDirection(string(json, "direction"));
+            }
+            if (json.hasKey("streamIds")) {
+                final ReadableArray streamIdsJson = array(json, "streamIds");
+                for (int i = 0; i < streamIdsJson.size(); i++) {
+                    final String streamId = streamIdsJson.getString(i);
+                    if (streamId == null) {
+                        throw new NullPointerException("each RtpTransceiverInit.streamId");
+                    }
+                    streamIds.add(streamId);
+                }
+            }
+            final ReadableArray sendEncodingsJson = array(json, "sendEncodings");
+            if (sendEncodingsJson != null) {
+                for (int i = 0; i < sendEncodingsJson.size(); i++) {
+                    final ReadableMap sendEncodingJson = sendEncodingsJson.getMap(i);
+                    if (sendEncodingJson == null) {
+                        throw new NullPointerException("each RtpTransceiverInit.sendEncodings");
+                    }
+                    sendEncodings.add(sendEncoding(sendEncodingJson));
+                }
+            }
+            return new RtpTransceiver.RtpTransceiverInit(direction, streamIds, sendEncodings);
+        }
+        return new RtpTransceiver.RtpTransceiverInit();
+    }
+
+    // endregion
     //region PeerConnection.IceTransportsType
 
     @NonNull

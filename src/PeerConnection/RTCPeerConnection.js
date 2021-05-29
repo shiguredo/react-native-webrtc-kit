@@ -13,6 +13,7 @@ import RTCConfiguration from './RTCConfiguration';
 import RTCRtpSender from './RTCRtpSender';
 import RTCRtpReceiver from './RTCRtpReceiver';
 import RTCRtpTransceiver from './RTCRtpTransceiver';
+import type { RTCRtpTransceiverInit } from './RTCRtpTransceiver';
 import logger from '../Util/RTCLogger';
 import RTCMediaConstraints from './RTCMediaConstraints';
 import RTCDataChannel from './RTCDataChannel';
@@ -187,6 +188,19 @@ export default class RTCPeerConnection extends RTCPeerConnectionEventTarget {
   /** @private */
   static nativeCreateDataChannel(valueTag: ValueTag, label: string, options: RTCDataChannelInit | null): Promise<Object> {
     return WebRTCModule.peerConnectionCreateDataChannel(label, options, valueTag);
+  }
+
+  /** @private */
+  static nativeAddTransceiver(
+    valueTag: ValueTag,
+    trackValueTag: ValueTag,
+    init: RTCRtpTransceiverInit | null
+  ): Promise<Object> {
+    return WebRTCModule.peerConnectionAddTransceiver(
+      trackValueTag,
+      valueTag,
+      init
+    );
   }
 
   /**
@@ -471,6 +485,35 @@ export default class RTCPeerConnection extends RTCPeerConnectionEventTarget {
       logger.log(`# PeerConnection[${this._valueTag}]: createDataChannel finished: channel => `, info);
       return new RTCDataChannel(info);
     })
+  }
+
+  /**
+   * RTCRtpTransceiver を追加します。
+   *
+   *  @param {RTCMediaStreamTrack} track 追加する track
+   *  @param {RTCRtpTransceiverInit|null} init RTCRtpTransceiver の初期化情報
+   *  @return {Promise<RTCRtpTransceiver>} 結果を表す Promise。作成した Transceiver を返す
+   *  TODO(kdxu): リリース時にあわせて @since タグを更新する
+   *  @since 2020.x.0
+   */
+  addTransceiver(
+    track: RTCMediaStreamTrack,
+    init: RTCRtpTransceiverInit | null
+  ): Promise<RTCRtpTransceiver> {
+    logger.log(`# PeerConnection[${this._valueTag}]: add transceiver`);
+    return RTCPeerConnection.nativeAddTransceiver(
+      this._valueTag,
+      track._valueTag,
+      init
+    ).then((info) => {
+      logger.log(
+        `# PeerConnection[${this._valueTag}]: addTransceiver finished: channel => `,
+        info
+      );
+      const trans = new RTCRtpTransceiver(info);
+      this.transceivers.push(trans);
+      return trans;
+    });
   }
 
   _registerEventsFromNative(): void {

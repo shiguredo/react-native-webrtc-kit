@@ -57,6 +57,8 @@ import static jp.shiguredo.react.webrtckit.WebRTCConverter.mediaConstraints;
 import static jp.shiguredo.react.webrtckit.WebRTCConverter.mediaStreamTrackJsonValue;
 import static jp.shiguredo.react.webrtckit.WebRTCConverter.rtcConfiguration;
 import static jp.shiguredo.react.webrtckit.WebRTCConverter.rtpSenderJsonValue;
+import static jp.shiguredo.react.webrtckit.WebRTCConverter.rtpTransceiverJsonValue;
+import static jp.shiguredo.react.webrtckit.WebRTCConverter.rtpTransceiverInit;
 import static jp.shiguredo.react.webrtckit.WebRTCConverter.rtpTransceiverDirection;
 import static jp.shiguredo.react.webrtckit.WebRTCConverter.rtpTransceiverDirectionStringValue;
 import static jp.shiguredo.react.webrtckit.WebRTCConverter.sessionDescription;
@@ -750,6 +752,32 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         final DataChannel.Buffer buffer = dataChannelBuffer(sendBufferJson);
         dataChannel.send(buffer);
         promise.resolve(null);
+    }
+
+    /**
+     * peerConnectionAddTransceiver(String trackValueTag, String valueTag, RtpTransceiver.Init init): Promise<RtpTransceiver>
+     */
+    @ReactMethod
+    public void peerConnectionAddTransceiver(@NonNull String trackValueTag, @NonNull String valueTag, @NonNull ReadableMap initJson, @NonNull Promise promise) {
+      Log.d(getName(), "peerConnectionAddTransceiver()");
+      final PeerConnection peerConnection = repository.getPeerConnectionByValueTag(valueTag);
+      if (peerConnection == null) {
+        promise.reject("NotFoundError", "peer connection is not found");
+        return;
+      }
+      final MediaStreamTrack track = repository.tracks.getByValueTag(trackValueTag);
+      if (track == null) {
+        promise.reject("NotFoundError", "track is not found");
+        return;
+      }
+      final RtpTransceiver transceiver = peerConnection.addTransceiver(track, rtpTransceiverInit(initJson));
+      if (transceiver == null) {
+        promise.reject("PeerConnectionError", "cannot add the transceiver");
+        return;
+      }
+      // リポジトリの管理下に追加する
+      repository.transceivers.add(transceiver.getMid(), createNewValueTag(), transceiver);
+      promise.resolve(rtpTransceiverJsonValue(transceiver, repository));
     }
 
     //endregion

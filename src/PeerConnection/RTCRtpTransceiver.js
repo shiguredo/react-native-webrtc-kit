@@ -27,6 +27,27 @@ export type RTCRtpTransceiverDirection =
   | 'recvonly'
   | 'inactive'
 
+type RTCRtpSendEncodingParameters = {
+  active?: boolean,
+  rid?: string,
+  scaleResolutionDownBy?: number,
+  maxBitrate?: number,
+  maxFramerate?: number,
+};
+
+/**
+ * RTCRtpTransceiver の初期化オブジェクトです。
+ * @typedef {Object} RTCRtpTransceiverInit
+ * TODO(kdxu): since tag をリリース時に設定する
+ * @since 2020.x.0
+ */
+export type RTCRtpTransceiverInit = {
+  direction?: RTCRtpTransceiverDirection,
+  sendEncodings: Array<RTCRtpSendEncodingParameters>,
+  streamIds?: Array<string>,
+  // dtx, codecPayloadType は RNKit ではサポートしない
+};
+
 /**
  * {@link RTCRtpSender} と {@link RTCRtpReceiver} のペアです。
  * 両方がデータを共有する場合に使われます。
